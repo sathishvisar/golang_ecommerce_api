@@ -1,9 +1,12 @@
 package controllers
 
 import (
+	"database/sql"
 	"ecommerce-api/common"
 	"ecommerce-api/db"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 
@@ -16,6 +19,53 @@ type Product struct {
 	Name     string  `json:"name"`
 	Price    float64 `json:"price"`
 	Category int     `json:"category_id"`
+}
+
+type CreateProductData struct {
+	Name     string  `json:"name"`
+	Price    float64 `json:"price"`
+	Category int     `json:"category_id"`
+}
+
+func CreateProduct(w http.ResponseWriter, r *http.Request) {
+	// Read the body data
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
+	}
+
+	// Unmarshal the JSON data into a struct
+	var requestData CreateProductData
+	err = json.Unmarshal(body, &requestData)
+	if err != nil {
+		http.Error(w, "Error decoding JSON data", http.StatusBadRequest)
+		return
+	}
+
+	// Prepare the SQL statement
+	stmt, err := db.DB.Prepare("INSERT INTO products(name, price, category_id) VALUES(?, ?, ?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+
+	// Execute the SQL statement
+	result, err := stmt.Exec(requestData.Name, requestData.Price, requestData.Category)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Get the ID of the inserted row
+	lastInsertID, err := result.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(lastInsertID)
+
+	// Respond to the client
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Body received and processed successfully"))
 }
 
 func GetProduct(w http.ResponseWriter, r *http.Request) {
@@ -37,17 +87,20 @@ func GetProduct(w http.ResponseWriter, r *http.Request) {
 	// Scan the result into the Product variable
 	err := row.Scan(&product.ID, &product.Name, &product.Price, &product.Category)
 	if err != nil {
-		if err != nil {
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			http.Error(w, "Product not found", http.StatusInternalServerError)
 			return
 		}
+		fmt.Println(err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
 	}
 
 	// Respond with the fetched product in JSON format
 	w.Header().Set("Content-Type", "application/json")
 
 	fmt.Fprintf(w, `{"id":%d,"name":"%s","price":%f,"category_id": %d}`, product.ID, product.Name, product.Price, product.Category)
-
 }
 
 func GetProducts(w http.ResponseWriter, r *http.Request) {
