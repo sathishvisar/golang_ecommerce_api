@@ -3,9 +3,13 @@ package common
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+
+	"github.com/cloudinary/cloudinary-go/v2"
 )
 
 // GetPageAndLimit extracts page and limit from URL query parameters and provides default values if not present.
@@ -61,4 +65,25 @@ func RespondWithJSON(w http.ResponseWriter, data interface{}) {
 
 	// Write the JSON response to the client
 	w.Write(responseJSON)
+}
+
+// ImageUpload uploads an image to Cloudinary.
+func ImageUpload(r *http.Request) string {
+	cloudinaryURL := os.Getenv("CLOUDINARY_URL")
+	cld, err := cloudinary.NewFromURL(cloudinaryURL)
+	if err != nil {
+		log.Printf("Error creating Cloudinary client: %v", err)
+		return ""
+	}
+
+	imagePath := "path/to/your/image.jpg"
+	file, err := os.Open(imagePath)
+	if err != nil {
+		log.Printf("Error opening image file: %v", err)
+		return ""
+	}
+	defer file.Close()
+	fmt.Println(cld)
+
+	return ""
 }

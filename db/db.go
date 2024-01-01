@@ -4,6 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+
+	"github.com/joho/godotenv"
 )
 
 // DB is the package-level variable to store the database connection
@@ -11,13 +14,17 @@ var DB *sql.DB
 
 // InitDB initializes the database connection
 func InitDB() *sql.DB {
+	// Load variables from the .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
 	fmt.Println("Init db....")
 
 	// Database connection parameters
-	dbUser := "root"
-	dbPassword := "1234"
-	dbHost := "127.0.0.1:3306"
-	dbName := "ecommerce_store"
+	dbUser := os.Getenv("DB_USER")
+	dbPassword := os.Getenv("DB_PASSWORD")
+	dbHost := os.Getenv("DB_HOST")
+	dbName := os.Getenv("DATABASE")
 
 	// Create a connection string
 	dataSourceName := fmt.Sprintf("%s:%s@tcp(%s)/%s", dbUser, dbPassword, dbHost, dbName)
