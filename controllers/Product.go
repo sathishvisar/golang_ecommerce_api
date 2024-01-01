@@ -65,7 +65,7 @@ func CreateProduct(w http.ResponseWriter, r *http.Request) {
 
 	// Respond to the client
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Body received and processed successfully"))
+	w.Write([]byte("Product created successfully"))
 }
 
 func GetProduct(w http.ResponseWriter, r *http.Request) {
